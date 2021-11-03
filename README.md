@@ -1,2 +1,3 @@
-# git-pretty-graph
-A simple shell script to view the prettier git graph
+# Git Pretty Graph
+
+A simple shell script to view the prettier git graph.
