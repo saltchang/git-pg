@@ -3,7 +3,6 @@
 git_pretty_graph() {
     SOLO=
     HEAD=
-    PRETTY=
     JUMP=0
 
     while [ $# -gt 0 ]; do
@@ -20,11 +19,6 @@ git_pretty_graph() {
             shift # past argument
             ;;
 
-            --pretty)
-            PRETTY=$1
-            shift # past argument
-            ;;
-
             *)    # unknown option
             echo "Unknown argument: $1"
             return
@@ -34,23 +28,21 @@ git_pretty_graph() {
 
     FORMAT_STRING='%C(bold #ee9f5e)%h: %C(reset)%C(#f6ff78)%s%C(reset) %C(auto)%d%C(reset)%n          %C(bold #35b59b)%as%C(reset) %C(bold #4ee681)(%ar)%C(reset) %C(bold #60b5dd)<%an>%C(reset)%n'
 
-    GIT_GRAPH_COMMAND="git log --graph --decorate --color=always 2> /dev/null || return;"
+    GIT_GRAPH_COMMAND="git log --graph --decorate --color=always"
 
-    if [ -z "$PRETTY" ]; then
-        GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --format=format:'$FORMAT_STRING'"
+    if [ "$HEAD" = "YES" ]; then
+        JUMP=0
     else
-        GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --format=format:'$PRETTY'"
+        JUMP=$(eval "$GIT_GRAPH_COMMAND" 2> /dev/null | grep -n -m 1 "HEAD ->" | sed  's/\([0-9]*\).*/\1/')
     fi
+
+    GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --format=format:'$FORMAT_STRING'"
 
     if [ ! "$SOLO" = "YES" ]; then
         GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --all"
     fi
 
-    if [ "$HEAD" = "YES" ]; then
-        JUMP=0
-    else
-        JUMP=$(eval "$GIT_GRAPH_COMMAND" | grep -n -m 1 "HEAD ->" | sed  's/\([0-9]*\).*/\1/')
-    fi
+    GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} 2> /dev/null || return"
 
     if [ -d .git ]; then
         eval "$GIT_GRAPH_COMMAND | less -j$JUMP -R -p \"(HEAD ->)[^,)]*\""
