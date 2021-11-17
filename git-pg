@@ -1,6 +1,8 @@
 #!/bin/bash
 
 git_pretty_graph() {
+    GIT_PG_VERSION="1.0.0"
+
     SOLO=
     HEAD=
     NO_PAGER=
@@ -8,7 +10,7 @@ git_pretty_graph() {
     USAGE="
 [Usage]
 
-    $(basename "$0") [-H | --help | --usage] [-h] [-P] [-s]
+    $(basename "$0") [-H | --help | --usage] [-v | --version] [-h] [-P] [-s]
 
 [Descriptions]
 
@@ -18,6 +20,9 @@ git_pretty_graph() {
 
     -H | --help | --usage
         Show this help text.
+
+    -v | --version
+        Show the version of $(basename "$0").
 
     -h | --head
         Scroll to the position of HEAD in the current branch.
@@ -35,6 +40,11 @@ git_pretty_graph() {
         case $key in
         -H | --help | --usage)
             echo "$USAGE"
+            exit 0
+            ;;
+
+        -v | --version)
+            echo "$(basename "$0") version $GIT_PG_VERSION"
             exit 0
             ;;
 
