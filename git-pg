@@ -12,7 +12,7 @@ git_pretty_graph() {
 
 [Descriptions]
 
-    Show the graph tree of Git history of the current repository with colorful word highlighting.
+    Show the graph tree of Git history of the current repository with colorful text highlighting.
 
 [Options]
 
@@ -33,27 +33,27 @@ git_pretty_graph() {
         key="$1"
 
         case $key in
-            -H|--help|--usage)
+        -H | --help | --usage)
             echo "$USAGE"
             exit 0
             ;;
 
-            -s|--solo)
+        -s | --solo)
             SOLO=YES
             shift # past argument
             ;;
 
-            -h|--head)
+        -h | --head)
             HEAD=YES
             shift # past argument
             ;;
 
-            -P|--no-pager)
+        -P | --no-pager)
             NO_PAGER=YES
             shift # past argument
             ;;
 
-            *)    # unknown option
+        *) # unknown option
             echo
             echo "$(basename "$0"): '$1' is not a valid option. Please see \`$(basename "$0") [-H | --help | --usage]\`"
             exit 1
@@ -61,7 +61,23 @@ git_pretty_graph() {
         esac
     done
 
-    FORMAT_STRING='%C(bold #ee9f5e)%h: %C(reset)%C(#f6ff78)%s%C(reset) %C(auto)%d%C(reset)%n          %C(bold #35b59b)%as%C(reset) %C(bold #4ee681)(%ar)%C(reset) %C(bold #60b5dd)<%an>%C(reset)%n'
+    C_RESET="%C(reset)"
+    C_AUTO="%C(auto)"
+    C_ORANGE="%C(bold #ee9f5e)"
+    C_YELLOW="%C(#f6ff78)"
+    C_CYAN="%C(bold #35b59b)"
+    C_GREEN="%C(bold #4ee681)"
+    C_BLUE="%C(bold #60b5dd)"
+
+    FORMAT_STRING="${C_ORANGE}%h: ${C_RESET}${C_YELLOW}%s${C_RESET} "
+
+    if [ ! "$NO_PAGER" = "YES" ]; then
+        FORMAT_STRING="${FORMAT_STRING}${C_AUTO}%d${C_RESET}%n"
+    else
+        FORMAT_STRING="${FORMAT_STRING}%d%n"
+    fi
+
+    FORMAT_STRING="${FORMAT_STRING}          ${C_CYAN}%as${C_RESET} ${C_GREEN}(%ar)${C_RESET} ${C_BLUE}<%an>${C_RESET}%n"
 
     GIT_GRAPH_COMMAND="git --no-pager log --graph --decorate --color=always --format=format:'$FORMAT_STRING'"
 
@@ -73,18 +89,22 @@ git_pretty_graph() {
 
     if [ ! "$NO_PAGER" = "YES" ]; then
         if [ "$HEAD" = "YES" ]; then
-            GIT_GRAPH_COMMAND="($GIT_GRAPH_COMMAND) | less -RX -p \"(HEAD ->)[^,)]*\""
+            LESS_STR="| less -RX -p \"(HEAD ->)[^,)]*\""
         else
-            GIT_GRAPH_COMMAND="($GIT_GRAPH_COMMAND) | less +g -RX -p \"(HEAD ->)[^,)]*\""
+            LESS_STR="| less +g -RX -p \"(HEAD ->)[^,)]*\""
         fi
+    else
+        GREP_STR="| GREP_COLORS='0;31;46' GREP_COLOR='0;31;46' grep --color -C 9999 -P '(HEAD ->)[^,)]*'"
     fi
+
+    GIT_GRAPH_COMMAND="($GIT_GRAPH_COMMAND) ${LESS_STR}${GREP_STR}"
 
     if [ -d .git ]; then
         eval "$GIT_GRAPH_COMMAND"
     else
-        git rev-parse --git-dir 2> /dev/null;
+        git rev-parse --git-dir 2>/dev/null
         printf "\nYou are not in a git repository.\n"
-    fi;
+    fi
 
     return
 }
