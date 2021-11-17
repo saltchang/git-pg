@@ -2,6 +2,8 @@
 
 A simple and pretty Git Graph tool.
 
+![git-pg usage](https://github.com/saltchang/git-pg/blob/main/assets/git-pg-usage-example.gif?raw=true)
+
 ## Getting Started
 
 ### Installation
