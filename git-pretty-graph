@@ -3,12 +3,41 @@
 git_pretty_graph() {
     SOLO=
     HEAD=
-    JUMP=0
+    NO_PAGER=
+
+    USAGE="
+[Usage]
+
+    $(basename "$0") [-H | --help | --usage] [-h] [-P] [-s]
+
+[Descriptions]
+
+    Show the graph tree of Git history of the current repository with colorful word highlighting.
+
+[Options]
+
+    -H | --help | --usage
+        Show this help text.
+
+    -h | --head
+        Scroll to the position of HEAD in the current branch.
+
+    -P | --no-pager
+        Print the Git history without using pager.
+
+    -s | --solo
+        Show the history of current branch only.
+"
 
     while [ $# -gt 0 ]; do
         key="$1"
 
         case $key in
+            -H|--help|--usage)
+            echo "$USAGE"
+            exit 0
+            ;;
+
             -s|--solo)
             SOLO=YES
             shift # past argument
@@ -19,24 +48,22 @@ git_pretty_graph() {
             shift # past argument
             ;;
 
+            -P|--no-pager)
+            NO_PAGER=YES
+            shift # past argument
+            ;;
+
             *)    # unknown option
-            echo "Unknown argument: $1"
-            return
+            echo
+            echo "$(basename "$0"): '$1' is not a valid option. Please see \`$(basename "$0") [-H | --help | --usage]\`"
+            exit 1
             ;;
         esac
     done
 
     FORMAT_STRING='%C(bold #ee9f5e)%h: %C(reset)%C(#f6ff78)%s%C(reset) %C(auto)%d%C(reset)%n          %C(bold #35b59b)%as%C(reset) %C(bold #4ee681)(%ar)%C(reset) %C(bold #60b5dd)<%an>%C(reset)%n'
 
-    GIT_GRAPH_COMMAND="git log --graph --decorate --color=always"
-
-    if [ "$HEAD" = "YES" ]; then
-        JUMP=0
-    else
-        JUMP=$(eval "$GIT_GRAPH_COMMAND" 2> /dev/null | grep -n -m 1 "HEAD ->" | sed  's/\([0-9]*\).*/\1/')
-    fi
-
-    GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --format=format:'$FORMAT_STRING'"
+    GIT_GRAPH_COMMAND="git --no-pager log --graph --decorate --color=always --format=format:'$FORMAT_STRING'"
 
     if [ ! "$SOLO" = "YES" ]; then
         GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} --all"
@@ -44,8 +71,16 @@ git_pretty_graph() {
 
     GIT_GRAPH_COMMAND="${GIT_GRAPH_COMMAND} 2> /dev/null || return"
 
+    if [ ! "$NO_PAGER" = "YES" ]; then
+        if [ "$HEAD" = "YES" ]; then
+            GIT_GRAPH_COMMAND="($GIT_GRAPH_COMMAND) | less -RX -p \"(HEAD ->)[^,)]*\""
+        else
+            GIT_GRAPH_COMMAND="($GIT_GRAPH_COMMAND) | less +g -RX -p \"(HEAD ->)[^,)]*\""
+        fi
+    fi
+
     if [ -d .git ]; then
-        eval "$GIT_GRAPH_COMMAND | less -j$JUMP -R -p \"(HEAD ->)[^,)]*\""
+        eval "$GIT_GRAPH_COMMAND"
     else
         git rev-parse --git-dir 2> /dev/null;
         printf "\nYou are not in a git repository.\n"
